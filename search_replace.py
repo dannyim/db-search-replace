@@ -15,6 +15,8 @@ def search_replace(f, search, replace):
 			newline = line
 			# find serialized strings in the current line
 			# and replace, updating the length
+			res = ''
+			last_idx = 0
 			for m in re.finditer(regex, line):
 				s = m.start()
 				e = m.end()
@@ -27,12 +29,15 @@ def search_replace(f, search, replace):
 					if search in stripped_substr:
 						newstr = stripped_substr.replace(search, replace)
 						newlen = len(newstr)
-						# replace the line with new contents
-						beg = line[:s]
+						# add contents between last match and the current one
 						serialstart = "s:%d:" % newlen
-						mid = serialstart + newstr
-						end = line[e+length+2:]
-						newline = beg + mid + end
+						serialend = '"' + newstr + '"'
+						res += line[last_idx:s] + serialstart + serialend
+						last_idx = e+length+2
+			if res:
+				newline = res
+				# add remaining part of the line, if any
+				newline += line[last_idx:]
 			# search and replace non-serialized occurences of the search string
 			newline = newline.replace(search, replace)
 			newfile.write(newline)
